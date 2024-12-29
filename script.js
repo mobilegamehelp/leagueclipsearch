@@ -1,10 +1,38 @@
 // Twitch API Credentials
 const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
 const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
-const GAME_ID = '21779'; // League of Legends game ID
+
+// Fetch all available games and populate the dropdown
+async function fetchGames() {
+    try {
+        const response = await fetch('https://api.twitch.tv/helix/games/top?first=100', {
+            headers: {
+                'Client-ID': CLIENT_ID,
+                'Authorization': `Bearer ${ACCESS_TOKEN}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        const gameSelect = document.getElementById('gameSelect');
+        data.data.forEach((game) => {
+            const option = document.createElement('option');
+            option.value = game.id;
+            option.textContent = game.name;
+            gameSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error fetching games:', error);
+        alert('Failed to load games.');
+    }
+}
 
 // Helper function to fetch and display clips incrementally
-async function fetchAllClips(startDate, endDate, keyword) {
+async function fetchAllClips(gameId, startDate, endDate, keyword) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
@@ -18,7 +46,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
             pageCount++;
 
             // Build the API URL with pagination
-            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20`;
+            let url = `https://api.twitch.tv/helix/clips?game_id=${gameId}&started_at=${startDate}&ended_at=${endDate}&first=20`;
             if (cursor) url += `&after=${cursor}`;
 
             // Fetch the clips
@@ -71,7 +99,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
 }
 
 // Function to initiate the fetching process
-async function fetchClips(days, keyword) {
+async function fetchClips(days, keyword, gameId) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     resultsDiv.innerHTML = ''; // Clear previous results
@@ -81,7 +109,7 @@ async function fetchClips(days, keyword) {
         const endDate = new Date().toISOString();
         const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-        await fetchAllClips(startDate, endDate, keyword);
+        await fetchAllClips(gameId, startDate, endDate, keyword);
 
         console.log('Fetching complete.');
     } catch (error) {
@@ -95,6 +123,9 @@ async function fetchClips(days, keyword) {
 document.getElementById('search').addEventListener('click', () => {
     const daysInput = document.getElementById('timeRange').value;
     const keywordInput = document.getElementById('keyword').value.trim();
+    const gameSelect = document.getElementById('gameSelect');
+    const gameId = gameSelect.value;
+
     const days = parseInt(daysInput, 10);
 
     if (isNaN(days) || days <= 0) {
@@ -107,5 +138,13 @@ document.getElementById('search').addEventListener('click', () => {
         return;
     }
 
-    fetchClips(days, keywordInput);
+    if (!gameId) {
+        alert('Please select a game.');
+        return;
+    }
+
+    fetchClips(days, keywordInput, gameId);
 });
+
+// Fetch all games when the page loads
+window.onload = fetchGames;
