@@ -1,4 +1,4 @@
-async function fetchAllClips(startDate, endDate, keywords, maxPages = 10, clipsPerPage = 50) {
+async function fetchAllClips(startDate, endDate, keywords, maxPages = 100, clipsPerPage = 100) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
