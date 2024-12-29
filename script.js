@@ -18,13 +18,23 @@ async function fetchGames() {
 
         const data = await response.json();
 
+        console.log('Fetched games:', data); // Log the fetched games data
+
         const gameSelect = document.getElementById('gameSelect');
-        data.data.forEach((game) => {
-            const option = document.createElement('option');
-            option.value = game.id;
-            option.textContent = game.name;
-            gameSelect.appendChild(option);
-        });
+
+        // Check if data contains games
+        if (data.data && data.data.length > 0) {
+            // Populate the dropdown with the fetched games
+            data.data.forEach((game) => {
+                const option = document.createElement('option');
+                option.value = game.id;
+                option.textContent = game.name;
+                gameSelect.appendChild(option);
+            });
+        } else {
+            console.log('No games found in response.');
+            alert('No games found.');
+        }
     } catch (error) {
         console.error('Error fetching games:', error);
         alert('Failed to load games.');
