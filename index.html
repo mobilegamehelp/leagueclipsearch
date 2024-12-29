@@ -10,29 +10,26 @@
             padding: 10px;
             border: 1px solid #ccc;
         }
-        img {
-            margin-top: 10px;
+        #loading {
+            font-size: 16px;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #666;
         }
     </style>
 </head>
 <body>
     <h1>Search Twitch Clips</h1>
-    
     <label for="timeRange">Enter the number of days to search:</label>
     <input type="number" id="timeRange" placeholder="e.g., 7">
-    
+    <br>
     <label for="keyword">Enter keyword to search for:</label>
     <input type="text" id="keyword" placeholder="e.g., pentakill">
-    
-    <label for="gameSelect">Select a game:</label>
-    <select id="gameSelect">
-        <option value="">--Select Game--</option>
-    </select>
-
+    <br>
     <button id="search">Search Clips</button>
 
-    <div id="status">Searching for clips...</div>
     <div id="results"></div>
+    <div id="loading"></div> <!-- Loading indicator -->
 
     <script src="script.js"></script>
 </body>
