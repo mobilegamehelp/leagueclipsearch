@@ -2,22 +2,19 @@
 const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
 const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 const GAME_ID = '21779'; // League of Legends game ID
-const MAX_CLIPS = 1000; // Limit the total clips fetched
 
-// Helper function to fetch all clips (with pagination)
-async function fetchAllClips(startDate, endDate) {
-    let allClips = [];
-    const seenClipIds = new Set();
+// Helper function to fetch and display clips incrementally
+async function fetchAllClips(startDate, endDate, keyword) {
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = ''; // Clear previous results
+
+    let seenClipIds = new Set();
     let cursor = null; // Pagination cursor
     let pageCount = 0; // Track the number of pages fetched
 
     try {
         do {
             pageCount++;
-            if (allClips.length >= MAX_CLIPS) {
-                console.log(`Reached maximum clip limit: ${MAX_CLIPS}`);
-                break;
-            }
 
             // Build the API URL with pagination
             let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20`;
@@ -41,11 +38,14 @@ async function fetchAllClips(startDate, endDate) {
             const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
             newClips.forEach((clip) => seenClipIds.add(clip.id));
 
-            // Add unique clips
-            allClips = allClips.concat(newClips);
+            // Filter clips by keyword
+            const filteredClips = newClips.filter((clip) =>
+                clip.title.toLowerCase().includes(keyword.toLowerCase()) ||
+                clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())
+            );
 
-            // Display the new clips incrementally
-            newClips.forEach((clip) => {
+            // Display filtered clips incrementally
+            filteredClips.forEach((clip) => {
                 const clipDiv = document.createElement('div');
                 clipDiv.className = 'clip';
                 clipDiv.innerHTML = `
@@ -54,23 +54,22 @@ async function fetchAllClips(startDate, endDate) {
                     <p><strong>Views:</strong> ${clip.view_count}</p>
                     <a href="${clip.url}" target="_blank">Watch Clip</a>
                 `;
-                document.getElementById('results').appendChild(clipDiv);
+                resultsDiv.appendChild(clipDiv);
             });
 
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
-            console.log(`Page ${pageCount}: Fetched ${newClips.length} unique clips.`);
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, ${filteredClips.length} matched.`);
         } while (cursor);
 
-        console.log(`Total Unique Clips Fetched: ${allClips.length}`);
-        return allClips;
+        console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
     } catch (error) {
+        resultsDiv.innerHTML = `Error: ${error.message}`;
         console.error('Error fetching clips:', error);
-        throw error;
     }
 }
 
-// Function to filter and display clips
+// Function to initiate the fetching process
 async function fetchClips(days, keyword) {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = 'Fetching clips...';
@@ -79,8 +78,7 @@ async function fetchClips(days, keyword) {
         const endDate = new Date().toISOString();
         const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-        // Fetch all clips
-        await fetchAllClips(startDate, endDate);
+        await fetchAllClips(startDate, endDate, keyword);
 
         console.log('Fetching complete.');
     } catch (error) {
