@@ -6,7 +6,8 @@ const GAME_ID = '21779'; // League of Legends game ID
 // Helper function to fetch and display clips incrementally
 async function fetchAllClips(startDate, endDate, keyword) {
     const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = ''; // Clear previous results
+    const loadingDiv = document.getElementById('loading');
+    loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
 
     let seenClipIds = new Set(); // Track seen clip IDs to avoid duplicates
     let cursor = null; // Pagination cursor
@@ -48,6 +49,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
                         <h3>${clip.title}</h3>
                         <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
                         <p><strong>Views:</strong> ${clip.view_count}</p>
+                        <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
                         <a href="${clip.url}" target="_blank">Watch Clip</a>
                     `;
                     resultsDiv.appendChild(clipDiv);
@@ -60,8 +62,10 @@ async function fetchAllClips(startDate, endDate, keyword) {
         } while (cursor);
 
         console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
+        loadingDiv.innerHTML = 'Search complete. All results are displayed.'; // Stop loading message
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
+        loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
         console.error('Error fetching clips:', error);
     }
 }
@@ -69,7 +73,9 @@ async function fetchAllClips(startDate, endDate, keyword) {
 // Function to initiate the fetching process
 async function fetchClips(days, keyword) {
     const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = 'Fetching clips...';
+    const loadingDiv = document.getElementById('loading');
+    resultsDiv.innerHTML = ''; // Clear previous results
+    loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
 
     try {
         const endDate = new Date().toISOString();
@@ -80,6 +86,7 @@ async function fetchClips(days, keyword) {
         console.log('Fetching complete.');
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
+        loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
         console.error(error);
     }
 }
