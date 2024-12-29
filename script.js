@@ -18,7 +18,7 @@ async function fetchAllClips(startDate, endDate, keywords) {
             pageCount++;
 
             // Build the API URL with pagination
-            let url = https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=50;
+            let url = https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20;
             if (cursor) url += &after=${cursor};
 
             // Fetch the clips
