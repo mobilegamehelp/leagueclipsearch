@@ -7,13 +7,13 @@ async function fetchClips(days, gameId, keyword) {
     const resultsDiv = document.getElementById('results');
     const statusDiv = document.getElementById('status');
     
-    // Check if elements are available before modifying
+    // Ensure the status and results divs are available before modifying
     if (!resultsDiv || !statusDiv) {
         console.error('Missing results or status divs.');
         return;
     }
 
-    resultsDiv.innerHTML = 'Fetching clips...';
+    // Set initial status
     statusDiv.innerHTML = 'Searching for clips...';
 
     try {
@@ -22,6 +22,7 @@ async function fetchClips(days, gameId, keyword) {
         const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
         // Make the API request
+        console.log(`Fetching clips for game_id ${gameId} from ${startDate} to ${endDate}...`);
         const response = await fetch(
             `https://api.twitch.tv/helix/clips?game_id=${gameId}&started_at=${startDate}&ended_at=${endDate}`,
             {
@@ -32,25 +33,29 @@ async function fetchClips(days, gameId, keyword) {
             }
         );
 
-        // Check for errors in the response
+        // Check for response errors
         if (!response.ok) {
             throw new Error(`API error: ${response.status} - ${response.statusText}`);
         }
 
         // Parse the JSON response
         const data = await response.json();
+        console.log('Fetched clips data:', data);
+
+        // Check if the data contains clips
         if (!data.data || data.data.length === 0) {
             throw new Error('No clips found for the specified time range.');
         }
 
-        // Display the clips
-        resultsDiv.innerHTML = ''; // Clear previous results
+        // Clear previous results
+        resultsDiv.innerHTML = '';
 
         // Filter clips based on the keyword if provided
         const filteredClips = data.data.filter((clip) =>
             clip.title.toLowerCase().includes(keyword.toLowerCase())
         );
 
+        // If no clips match the filter, show a message
         if (filteredClips.length === 0) {
             resultsDiv.innerHTML = 'No clips found with the specified keyword.';
         } else {
@@ -69,6 +74,7 @@ async function fetchClips(days, gameId, keyword) {
             });
         }
 
+        // Set the status message after processing
         statusDiv.innerHTML = 'Search complete!';
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
@@ -148,6 +154,11 @@ document.getElementById('search').addEventListener('click', () => {
         return;
     }
 
+    // Show that the search is starting
+    const statusDiv = document.getElementById('status');
+    statusDiv.innerHTML = 'Searching for clips...';
+
+    // Call the fetchClips function
     fetchClips(days, gameId, keywordInput);
 });
 
