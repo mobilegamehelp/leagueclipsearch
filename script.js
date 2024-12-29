@@ -38,28 +38,24 @@ async function fetchAllClips(startDate, endDate, keyword) {
             const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
             newClips.forEach((clip) => seenClipIds.add(clip.id));
 
-            // Filter clips by keyword
-            const filteredClips = newClips.filter((clip) =>
-                clip.title.toLowerCase().includes(keyword.toLowerCase()) ||
-                clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())
-            );
-
-            // Display filtered clips incrementally
-            filteredClips.forEach((clip) => {
-                const clipDiv = document.createElement('div');
-                clipDiv.className = 'clip';
-                clipDiv.innerHTML = `
-                    <h3>${clip.title}</h3>
-                    <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-                    <p><strong>Views:</strong> ${clip.view_count}</p>
-                    <a href="${clip.url}" target="_blank">Watch Clip</a>
-                `;
-                resultsDiv.appendChild(clipDiv);
+            // Filter and display clips incrementally as they are fetched
+            newClips.forEach((clip) => {
+                if (clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())) {
+                    const clipDiv = document.createElement('div');
+                    clipDiv.className = 'clip';
+                    clipDiv.innerHTML = `
+                        <h3>${clip.title}</h3>
+                        <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                        <p><strong>Views:</strong> ${clip.view_count}</p>
+                        <a href="${clip.url}" target="_blank">Watch Clip</a>
+                    `;
+                    resultsDiv.appendChild(clipDiv);
+                }
             });
 
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
-            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, ${filteredClips.length} matched.`);
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displayed ${newClips.filter((clip) => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())).length} matched.`);
         } while (cursor);
 
         console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
