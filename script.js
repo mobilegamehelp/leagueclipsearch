@@ -31,6 +31,8 @@ async function fetchClips(days, keyword) {
 
         // Parse the JSON response
         const data = await response.json();
+        console.log('Raw API Response:', data); // Debugging log
+
         if (!data.data || data.data.length === 0) {
             throw new Error('No clips found for the specified time range.');
         }
@@ -39,6 +41,7 @@ async function fetchClips(days, keyword) {
         const filteredClips = data.data.filter((clip) =>
             clip.title.toLowerCase().includes(keyword.toLowerCase())
         );
+        console.log('Filtered Clips:', filteredClips); // Debugging log
 
         if (filteredClips.length === 0) {
             throw new Error(`No clips found matching the keyword "${keyword}".`);
