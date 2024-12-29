@@ -6,7 +6,7 @@ const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 async function fetchClips(days, gameId, keyword) {
     const resultsDiv = document.getElementById('results');
     const statusDiv = document.getElementById('status');
-    
+
     // Ensure the status and results divs are available before modifying
     if (!resultsDiv || !statusDiv) {
         console.error('Missing results or status divs.');
@@ -59,7 +59,8 @@ async function fetchClips(days, gameId, keyword) {
         if (filteredClips.length === 0) {
             resultsDiv.innerHTML = 'No clips found with the specified keyword.';
         } else {
-            filteredClips.forEach((clip) => {
+            // Show results as they come in
+            filteredClips.forEach((clip, index) => {
                 const clipDiv = document.createElement('div');
                 clipDiv.className = 'clip';
                 clipDiv.innerHTML = `
@@ -71,11 +72,15 @@ async function fetchClips(days, gameId, keyword) {
                     <img src="${clip.thumbnail_url.replace('-{width}x{height}', '')}" alt="Clip Thumbnail" width="200">
                 `;
                 resultsDiv.appendChild(clipDiv);
+
+                // Update status as clips are being shown
+                statusDiv.innerHTML = `Showing ${index + 1} of ${filteredClips.length} clips...`;
             });
         }
 
-        // Set the status message after processing
-        statusDiv.innerHTML = 'Search complete!';
+        // Final status after the search is complete
+        statusDiv.innerHTML = `Search complete! Found ${filteredClips.length} clips.`;
+
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
         console.error(error);
