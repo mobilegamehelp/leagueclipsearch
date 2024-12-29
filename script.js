@@ -65,7 +65,6 @@ async function fetchClips(days, keyword) {
 
         // Fetch all clips
         const allClips = await fetchAllClips(startDate, endDate);
-        console.log('All Clips Retrieved:', allClips);
 
         // Filter clips by keyword
         const filteredClips = allClips.filter((clip) =>
