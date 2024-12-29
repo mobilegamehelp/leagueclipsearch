@@ -1,3 +1,4 @@
+// Updated fetchAllClips function
 async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clipsPerPage = 100) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
@@ -56,7 +57,16 @@ async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clip
             // Stop if there are no more pages
             if (!cursor) break;
 
+            // Delay to avoid hitting API rate limits
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${clipsToDisplay.length} matching clips.`);
+
+            // Retry if less than the requested number of clips (50)
+            if (newClips.length < clipsPerPage) {
+                console.log(`Fetched fewer than ${clipsPerPage} clips on page ${pageCount}, retrying...`);
+                continue; // Retry this page
+            }
         }
 
         console.log(`Fetching complete. Total clips fetched: ${clipsToDisplay.length}`);
@@ -69,5 +79,26 @@ async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clip
         resultsDiv.innerHTML = `Error: ${error.message}`;
         loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
         console.error('Error fetching clips:', error);
+    }
+}
+
+// Display clips as usual
+function displayClips(clips) {
+    const resultsDiv = document.getElementById('results');
+    if (clips.length === 0) {
+        resultsDiv.innerHTML = 'No clips found matching your search criteria.';
+    } else {
+        clips.forEach((clip) => {
+            const clipDiv = document.createElement('div');
+            clipDiv.className = 'clip';
+            clipDiv.innerHTML = `
+                <h3>${clip.title}</h3>
+                <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                <p><strong>Views:</strong> ${clip.view_count}</p>
+                <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
+                <a href="${clip.url}" target="_blank">Watch Clip</a>
+            `;
+            resultsDiv.appendChild(clipDiv);
+        });
     }
 }
