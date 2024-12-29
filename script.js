@@ -3,7 +3,7 @@ const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
 const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 
 // Helper function to fetch clips
-async function fetchClips(days, gameId) {
+async function fetchClips(days, gameId, keyword) {
     const resultsDiv = document.getElementById('results');
     const statusDiv = document.getElementById('status');
     resultsDiv.innerHTML = 'Fetching clips...';
@@ -37,20 +37,30 @@ async function fetchClips(days, gameId) {
         }
 
         // Display the clips
-        resultsDiv.innerHTML = '';
-        data.data.forEach((clip) => {
-            const clipDiv = document.createElement('div');
-            clipDiv.className = 'clip';
-            clipDiv.innerHTML = `
-                <h3>${clip.title}</h3>
-                <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-                <p><strong>Views:</strong> ${clip.view_count}</p>
-                <a href="${clip.url}" target="_blank">Watch Clip</a>
-                <br>
-                <img src="${clip.thumbnail_url.replace('-{width}x{height}', '')}" alt="Clip Thumbnail" width="200">
-            `;
-            resultsDiv.appendChild(clipDiv);
-        });
+        resultsDiv.innerHTML = ''; // Clear previous results
+
+        // Filter clips based on the keyword if provided
+        const filteredClips = data.data.filter((clip) =>
+            clip.title.toLowerCase().includes(keyword.toLowerCase())
+        );
+
+        if (filteredClips.length === 0) {
+            resultsDiv.innerHTML = 'No clips found with the specified keyword.';
+        } else {
+            filteredClips.forEach((clip) => {
+                const clipDiv = document.createElement('div');
+                clipDiv.className = 'clip';
+                clipDiv.innerHTML = `
+                    <h3>${clip.title}</h3>
+                    <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                    <p><strong>Views:</strong> ${clip.view_count}</p>
+                    <a href="${clip.url}" target="_blank">Watch Clip</a>
+                    <br>
+                    <img src="${clip.thumbnail_url.replace('-{width}x{height}', '')}" alt="Clip Thumbnail" width="200">
+                `;
+                resultsDiv.appendChild(clipDiv);
+            });
+        }
 
         statusDiv.innerHTML = 'Search complete!';
     } catch (error) {
@@ -131,7 +141,7 @@ document.getElementById('search').addEventListener('click', () => {
         return;
     }
 
-    fetchClips(days, gameId);
+    fetchClips(days, gameId, keywordInput);
 });
 
 // Fetch games when the page loads
