@@ -1,4 +1,4 @@
-// Updated fetchAllClips function
+// Function to fetch and display clips with keyword search
 async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clipsPerPage = 100) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
@@ -30,7 +30,7 @@ async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clip
 
             const data = await response.json();
 
-            // Log the raw clip data for debugging
+            // Debug: Log the fetched data to see what is being returned
             console.log('Fetched Clip Data:', data);
 
             // Remove duplicates by checking IDs
@@ -61,12 +61,6 @@ async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clip
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${clipsToDisplay.length} matching clips.`);
-
-            // Retry if less than the requested number of clips (50)
-            if (newClips.length < clipsPerPage) {
-                console.log(`Fetched fewer than ${clipsPerPage} clips on page ${pageCount}, retrying...`);
-                continue; // Retry this page
-            }
         }
 
         console.log(`Fetching complete. Total clips fetched: ${clipsToDisplay.length}`);
@@ -82,9 +76,11 @@ async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clip
     }
 }
 
-// Display clips as usual
+// Function to display clips
 function displayClips(clips) {
     const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = ''; // Clear previous results
+
     if (clips.length === 0) {
         resultsDiv.innerHTML = 'No clips found matching your search criteria.';
     } else {
@@ -102,3 +98,26 @@ function displayClips(clips) {
         });
     }
 }
+
+// Event listener for the search button
+document.getElementById('search').addEventListener('click', () => {
+    const daysInput = document.getElementById('timeRange').value;
+    const keywordInput = document.getElementById('keyword').value.trim();
+    const days = parseInt(daysInput, 10);
+
+    if (isNaN(days) || days <= 0) {
+        alert('Please enter a valid number of days.');
+        return;
+    }
+
+    if (!keywordInput) {
+        alert('Please enter a keyword to filter clips.');
+        return;
+    }
+
+    const keywords = keywordInput.split(/\s+/); // Split the input by spaces for multiple keywords
+    const endDate = new Date().toISOString();
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    fetchAllClips(startDate, endDate, keywords);
+});
