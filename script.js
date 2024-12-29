@@ -4,7 +4,7 @@ const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 const GAME_ID = '21779'; // League of Legends game ID
 
 // Helper function to fetch and display clips incrementally
-async function fetchAllClips(startDate, endDate, keywords) {
+async function fetchAllClips(startDate, endDate, keywords, maxPages = 500, clipsPerPage = 50) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
@@ -12,13 +12,16 @@ async function fetchAllClips(startDate, endDate, keywords) {
     let seenClipIds = new Set(); // Track seen clip IDs to avoid duplicates
     let cursor = null; // Pagination cursor
     let pageCount = 0; // Track the number of pages fetched
+    const clipsToDisplay = []; // Array to hold clips to display after fetching
 
     try {
         do {
+            if (pageCount >= maxPages) break; // Stop after maxPages to prevent long search times
+
             pageCount++;
 
             // Build the API URL with pagination
-            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20`;
+            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=${clipsPerPage}`; // Request more clips per page
             if (cursor) url += `&after=${cursor}`;
 
             // Fetch the clips
@@ -39,40 +42,50 @@ async function fetchAllClips(startDate, endDate, keywords) {
             const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
             newClips.forEach((clip) => seenClipIds.add(clip.id));
 
-            // Filter and display clips incrementally as they are fetched
+            // Filter clips that match the keywords
             newClips.forEach((clip) => {
-                // Check if all keywords are present (case-insensitive) in the title or broadcaster name
                 const matchesKeywords = keywords.every((keyword) =>
                     clip.title.toLowerCase().includes(keyword.toLowerCase()) || 
                     clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())
                 );
-
                 if (matchesKeywords) {
-                    const clipDiv = document.createElement('div');
-                    clipDiv.className = 'clip';
-                    clipDiv.innerHTML = `
-                        <h3>${clip.title}</h3>
-                        <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-                        <p><strong>Views:</strong> ${clip.view_count}</p>
-                        <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
-                        <a href="${clip.url}" target="_blank">Watch Clip</a>
-                    `;
-                    resultsDiv.appendChild(clipDiv);
+                    clipsToDisplay.push(clip); // Store matching clips in an array
                 }
             });
 
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
-            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${newClips.filter(clip => keywords.every(keyword => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase()))).length} matching clips.`);
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${clipsToDisplay.length} matching clips.`);
         } while (cursor);
 
         console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
+
+        // Once all clips are fetched, display them all at once
+        displayClips(clipsToDisplay);
+
         loadingDiv.innerHTML = 'Search complete. All results are displayed.'; // Stop loading message
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
         loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
         console.error('Error fetching clips:', error);
     }
+}
+
+// Function to display clips
+function displayClips(clips) {
+    const resultsDiv = document.getElementById('results');
+    clips.forEach((clip) => {
+        const clipDiv = document.createElement('div');
+        clipDiv.className = 'clip';
+        clipDiv.innerHTML = `
+            <h3>${clip.title}</h3>
+            <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+            <p><strong>Views:</strong> ${clip.view_count}</p>
+            <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
+            <a href="${clip.url}" target="_blank">Watch Clip</a>
+        `;
+        resultsDiv.appendChild(clipDiv);
+    });
 }
 
 // Function to initiate the fetching process
