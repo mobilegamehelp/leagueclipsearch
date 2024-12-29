@@ -1,171 +1,111 @@
 // Twitch API Credentials
 const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
 const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
+const GAME_ID = '21779'; // League of Legends game ID
 
-// Helper function to fetch clips
-async function fetchClips(days, gameId, keyword) {
+// Helper function to fetch and display clips incrementally
+async function fetchAllClips(startDate, endDate, keyword) {
     const resultsDiv = document.getElementById('results');
-    const statusDiv = document.getElementById('status');
+    const loadingDiv = document.getElementById('loading');
+    loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
 
-    // Ensure the status and results divs are available before modifying
-    if (!resultsDiv || !statusDiv) {
-        console.error('Missing results or status divs.');
-        return;
-    }
-
-    // Set initial status
-    statusDiv.innerHTML = 'Searching for clips...';
+    let seenClipIds = new Set(); // Track seen clip IDs to avoid duplicates
+    let cursor = null; // Pagination cursor
+    let pageCount = 0; // Track the number of pages fetched
 
     try {
-        // Calculate the start and end date
-        const endDate = new Date().toISOString();
-        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+        do {
+            pageCount++;
 
-        // Make the API request
-        console.log(`Fetching clips for game_id ${gameId} from ${startDate} to ${endDate}...`);
-        const response = await fetch(
-            `https://api.twitch.tv/helix/clips?game_id=${gameId}&started_at=${startDate}&ended_at=${endDate}`,
-            {
+            // Build the API URL with pagination
+            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20`;
+            if (cursor) url += `&after=${cursor}`;
+
+            // Fetch the clips
+            const response = await fetch(url, {
                 headers: {
                     'Client-ID': CLIENT_ID,
                     'Authorization': `Bearer ${ACCESS_TOKEN}`,
                 },
-            }
-        );
-
-        // Check for response errors
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} - ${response.statusText}`);
-        }
-
-        // Parse the JSON response
-        const data = await response.json();
-        console.log('Fetched clips data:', data);
-
-        // Check if the data contains clips
-        if (!data.data || data.data.length === 0) {
-            throw new Error('No clips found for the specified time range.');
-        }
-
-        // Clear previous results
-        resultsDiv.innerHTML = '';
-
-        // Filter clips based on the keyword if provided
-        const filteredClips = data.data.filter((clip) =>
-            clip.title.toLowerCase().includes(keyword.toLowerCase())
-        );
-
-        // If no clips match the filter, show a message
-        if (filteredClips.length === 0) {
-            resultsDiv.innerHTML = 'No clips found with the specified keyword.';
-        } else {
-            // Show results as they come in
-            filteredClips.forEach((clip, index) => {
-                const clipDiv = document.createElement('div');
-                clipDiv.className = 'clip';
-                clipDiv.innerHTML = `
-                    <h3>${clip.title}</h3>
-                    <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-                    <p><strong>Views:</strong> ${clip.view_count}</p>
-                    <a href="${clip.url}" target="_blank">Watch Clip</a>
-                    <br>
-                    <img src="${clip.thumbnail_url.replace('-{width}x{height}', '')}" alt="Clip Thumbnail" width="200">
-                `;
-                resultsDiv.appendChild(clipDiv);
-
-                // Update status as clips are being shown
-                statusDiv.innerHTML = `Showing ${index + 1} of ${filteredClips.length} clips...`;
             });
-        }
 
-        // Final status after the search is complete
-        statusDiv.innerHTML = `Search complete! Found ${filteredClips.length} clips.`;
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status} - ${response.statusText}`);
+            }
 
+            const data = await response.json();
+
+            // Remove duplicates by checking IDs
+            const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
+            newClips.forEach((clip) => seenClipIds.add(clip.id));
+
+            // Filter and display clips incrementally as they are fetched
+            newClips.forEach((clip) => {
+                // Only display if the clip title or broadcaster name matches the keyword
+                if (clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())) {
+                    const clipDiv = document.createElement('div');
+                    clipDiv.className = 'clip';
+                    clipDiv.innerHTML = `
+                        <h3>${clip.title}</h3>
+                        <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                        <p><strong>Views:</strong> ${clip.view_count}</p>
+                        <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
+                        <a href="${clip.url}" target="_blank">Watch Clip</a>
+                    `;
+                    resultsDiv.appendChild(clipDiv);
+                }
+            });
+
+            // Update cursor for next page
+            cursor = data.pagination?.cursor || null;
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${newClips.filter(clip => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())).length} matching clips.`);
+        } while (cursor);
+
+        console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
+        loadingDiv.innerHTML = 'Search complete. All results are displayed.'; // Stop loading message
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
-        console.error(error);
-        statusDiv.innerHTML = 'Error occurred.';
+        loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
+        console.error('Error fetching clips:', error);
     }
 }
 
-// Helper function to fetch games
-async function fetchGames() {
+// Function to initiate the fetching process
+async function fetchClips(days, keyword) {
+    const resultsDiv = document.getElementById('results');
+    const loadingDiv = document.getElementById('loading');
+    resultsDiv.innerHTML = ''; // Clear previous results
+    loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
+
     try {
-        console.log("Fetching games...");
+        const endDate = new Date().toISOString();
+        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-        const response = await fetch('https://api.twitch.tv/helix/games/top?first=100', {
-            headers: {
-                'Client-ID': CLIENT_ID,
-                'Authorization': `Bearer ${ACCESS_TOKEN}`,
-            },
-        });
+        await fetchAllClips(startDate, endDate, keyword);
 
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        console.log('Fetched games:', data);
-
-        const gameSelect = document.getElementById('gameSelect');
-        
-        if (!gameSelect) {
-            console.error('Game select dropdown not found!');
-            return;
-        }
-        
-        // Check if data contains games
-        if (data.data && data.data.length > 0) {
-            console.log('Games available:', data.data.length);
-
-            // Sort games alphabetically by name
-            data.data.sort((a, b) => a.name.localeCompare(b.name));
-
-            // Append the sorted games to the dropdown
-            data.data.forEach((game) => {
-                const option = document.createElement('option');
-                option.value = game.id;
-                option.textContent = game.name;
-                gameSelect.appendChild(option);
-            });
-            console.log("Games added to dropdown");
-        } else {
-            console.log('No games found in response.');
-            alert('No games found.');
-        }
+        console.log('Fetching complete.');
     } catch (error) {
-        console.error('Error fetching games:', error);
-        alert('Failed to load games.');
+        resultsDiv.innerHTML = `Error: ${error.message}`;
+        loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
+        console.error(error);
     }
 }
 
 // Event listener for the search button
 document.getElementById('search').addEventListener('click', () => {
     const daysInput = document.getElementById('timeRange').value;
-    const keywordInput = document.getElementById('keyword').value;
-    const gameSelect = document.getElementById('gameSelect');
-    const gameId = gameSelect.value;
-
+    const keywordInput = document.getElementById('keyword').value.trim();
     const days = parseInt(daysInput, 10);
-    
+
     if (isNaN(days) || days <= 0) {
         alert('Please enter a valid number of days.');
         return;
     }
 
-    if (!gameId) {
-        alert('Please select a game to search.');
+    if (!keywordInput) {
+        alert('Please enter a keyword to filter clips.');
         return;
     }
 
-    // Show that the search is starting
-    const statusDiv = document.getElementById('status');
-    statusDiv.innerHTML = 'Searching for clips...';
-
-    // Call the fetchClips function
-    fetchClips(days, gameId, keywordInput);
+    fetchClips(days, keywordInput);
 });
-
-// Fetch games when the page loads
-window.onload = fetchGames;
