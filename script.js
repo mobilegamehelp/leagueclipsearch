@@ -40,6 +40,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
 
             // Filter and display clips incrementally as they are fetched
             newClips.forEach((clip) => {
+                // Only display if the clip title or broadcaster name matches the keyword
                 if (clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())) {
                     const clipDiv = document.createElement('div');
                     clipDiv.className = 'clip';
