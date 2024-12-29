@@ -4,7 +4,7 @@ const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 const GAME_ID = '21779'; // League of Legends game ID
 
 // Helper function to fetch and display clips incrementally
-async function fetchAllClips(startDate, endDate, keywords, maxPages = 500, clipsPerPage = 50) {
+async function fetchAllClips(startDate, endDate, keywords, maxPages = 10, clipsPerPage = 50) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
@@ -74,18 +74,22 @@ async function fetchAllClips(startDate, endDate, keywords, maxPages = 500, clips
 // Function to display clips
 function displayClips(clips) {
     const resultsDiv = document.getElementById('results');
-    clips.forEach((clip) => {
-        const clipDiv = document.createElement('div');
-        clipDiv.className = 'clip';
-        clipDiv.innerHTML = `
-            <h3>${clip.title}</h3>
-            <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-            <p><strong>Views:</strong> ${clip.view_count}</p>
-            <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
-            <a href="${clip.url}" target="_blank">Watch Clip</a>
-        `;
-        resultsDiv.appendChild(clipDiv);
-    });
+    if (clips.length === 0) {
+        resultsDiv.innerHTML = 'No clips found matching your search criteria.';
+    } else {
+        clips.forEach((clip) => {
+            const clipDiv = document.createElement('div');
+            clipDiv.className = 'clip';
+            clipDiv.innerHTML = `
+                <h3>${clip.title}</h3>
+                <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                <p><strong>Views:</strong> ${clip.view_count}</p>
+                <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
+                <a href="${clip.url}" target="_blank">Watch Clip</a>
+            `;
+            resultsDiv.appendChild(clipDiv); // Append the clip div to the results div
+        });
+    }
 }
 
 // Function to initiate the fetching process
