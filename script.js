@@ -1,21 +1,18 @@
-async function fetchAllClips(startDate, endDate, keywords, maxPages = 100, clipsPerPage = 1000) {
+async function fetchAllClips(startDate, endDate, keywords, maxClips = 1000, clipsPerPage = 100) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
 
     let seenClipIds = new Set(); // Track seen clip IDs to avoid duplicates
+    const clipsToDisplay = []; // Array to hold clips to display after fetching
     let cursor = null; // Pagination cursor
     let pageCount = 0; // Track the number of pages fetched
-    const clipsToDisplay = []; // Array to hold clips to display after fetching
 
     try {
-        do {
-            if (pageCount >= maxPages) break; // Stop after maxPages to prevent long search times
-
+        while (clipsToDisplay.length < maxClips) {
             pageCount++;
-
             // Build the API URL with pagination
-            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=${clipsPerPage}`; // Request more clips per page
+            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=${clipsPerPage}`;
             if (cursor) url += `&after=${cursor}`;
 
             // Fetch the clips
@@ -50,12 +47,19 @@ async function fetchAllClips(startDate, endDate, keywords, maxPages = 100, clips
                 }
             });
 
+            // If we've gathered enough clips, stop
+            if (clipsToDisplay.length >= maxClips) break;
+
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
-            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${clipsToDisplay.length} matching clips.`);
-        } while (cursor);
 
-        console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
+            // Stop if there are no more pages
+            if (!cursor) break;
+
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${clipsToDisplay.length} matching clips.`);
+        }
+
+        console.log(`Fetching complete. Total clips fetched: ${clipsToDisplay.length}`);
 
         // Once all clips are fetched, display them all at once
         displayClips(clipsToDisplay);
