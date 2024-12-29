@@ -8,7 +8,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = ''; // Clear previous results
 
-    let seenClipIds = new Set();
+    let seenClipIds = new Set(); // Track seen clip IDs to avoid duplicates
     let cursor = null; // Pagination cursor
     let pageCount = 0; // Track the number of pages fetched
 
@@ -34,7 +34,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
 
             const data = await response.json();
 
-            // Remove duplicates
+            // Remove duplicates by checking IDs
             const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
             newClips.forEach((clip) => seenClipIds.add(clip.id));
 
@@ -56,7 +56,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
 
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
-            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displayed ${newClips.filter((clip) => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())).length} matched.`);
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${newClips.filter(clip => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())).length} matching clips.`);
         } while (cursor);
 
         console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
