@@ -7,9 +7,13 @@ const GAME_ID = '21779'; // League of Legends game ID
 async function fetchAllClips(startDate, endDate) {
     let allClips = [];
     let cursor = null; // Pagination cursor
+    let pageCount = 0; // Track the number of pages fetched
 
     try {
         do {
+            // Increment page count
+            pageCount++;
+
             // Build the API URL with pagination
             let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20`;
             if (cursor) {
@@ -29,12 +33,19 @@ async function fetchAllClips(startDate, endDate) {
             }
 
             const data = await response.json();
+
+            // Add the fetched clips to the allClips array
             allClips = allClips.concat(data.data);
+
+            // Log the number of clips fetched on the current page
+            console.log(`Page ${pageCount}: Fetched ${data.data.length} clips.`);
 
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
         } while (cursor);
 
+        // Log the total number of clips fetched
+        console.log(`Total Clips Fetched: ${allClips.length}`);
         return allClips;
     } catch (error) {
         console.error('Error fetching clips:', error);
@@ -54,13 +65,13 @@ async function fetchClips(days, keyword) {
 
         // Fetch all clips
         const allClips = await fetchAllClips(startDate, endDate);
-        console.log('Total Clips Fetched:', allClips.length);
+        console.log('All Clips Retrieved:', allClips);
 
         // Filter clips by keyword
         const filteredClips = allClips.filter((clip) =>
             clip.title.toLowerCase().includes(keyword.toLowerCase())
         );
-        console.log('Filtered Clips:', filteredClips);
+        console.log(`Filtered Clips Found: ${filteredClips.length}`);
 
         if (filteredClips.length === 0) {
             throw new Error(`No clips found matching the keyword "${keyword}".`);
