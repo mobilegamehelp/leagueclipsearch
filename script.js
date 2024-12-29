@@ -4,7 +4,7 @@ const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 const GAME_ID = '21779'; // League of Legends game ID
 
 // Helper function to fetch and display clips incrementally
-async function fetchAllClips(startDate, endDate, keyword) {
+async function fetchAllClips(startDate, endDate, keywords) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
@@ -41,8 +41,13 @@ async function fetchAllClips(startDate, endDate, keyword) {
 
             // Filter and display clips incrementally as they are fetched
             newClips.forEach((clip) => {
-                // Only display if the clip title or broadcaster name matches the keyword
-                if (clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())) {
+                // Check if all keywords are present (case-insensitive) in the title or broadcaster name
+                const matchesKeywords = keywords.every((keyword) =>
+                    clip.title.toLowerCase().includes(keyword.toLowerCase()) || 
+                    clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())
+                );
+
+                if (matchesKeywords) {
                     const clipDiv = document.createElement('div');
                     clipDiv.className = 'clip';
                     clipDiv.innerHTML = `
@@ -58,7 +63,7 @@ async function fetchAllClips(startDate, endDate, keyword) {
 
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
-            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${newClips.filter(clip => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())).length} matching clips.`);
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${newClips.filter(clip => keywords.every(keyword => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase()))).length} matching clips.`);
         } while (cursor);
 
         console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
@@ -81,7 +86,15 @@ async function fetchClips(days, keyword) {
         const endDate = new Date().toISOString();
         const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-        await fetchAllClips(startDate, endDate, keyword);
+        // Split the keyword into an array of keywords
+        const keywords = keyword.trim().split(/\s+/); // Split by spaces and remove any extra whitespace
+
+        if (keywords.length === 0) {
+            alert('Please enter a valid keyword.');
+            return;
+        }
+
+        await fetchAllClips(startDate, endDate, keywords);
 
         console.log('Fetching complete.');
     } catch (error) {
