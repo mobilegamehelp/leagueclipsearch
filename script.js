@@ -12,69 +12,68 @@ async function fetchAllClips(startDate, endDate, keywords) {
     let seenClipIds = new Set(); // Track seen clip IDs to avoid duplicates
     let cursor = null; // Pagination cursor
     let pageCount = 0; // Track the number of pages fetched
-    let tasks = []; // Store promises for concurrent requests
 
     try {
-        // Create a function that fetches clips and processes them
-        const fetchPage = async (cursor) => {
+        do {
             pageCount++;
-            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=100`;
-            if (cursor) url += `&after=${cursor}`;
 
+            // Build the API URL with pagination
+            let url = https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=50;
+            if (cursor) url += &after=${cursor};
+
+            // Fetch the clips
             const response = await fetch(url, {
                 headers: {
                     'Client-ID': CLIENT_ID,
-                    'Authorization': `Bearer ${ACCESS_TOKEN}`,
+                    'Authorization': Bearer ${ACCESS_TOKEN},
                 },
             });
 
             if (!response.ok) {
-                throw new Error(`API error: ${response.status} - ${response.statusText}`);
+                throw new Error(API error: ${response.status} - ${response.statusText});
             }
 
             const data = await response.json();
+
+            // Remove duplicates by checking IDs
             const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
             newClips.forEach((clip) => seenClipIds.add(clip.id));
 
+            // Filter and display clips incrementally as they are fetched
             newClips.forEach((clip) => {
+                // Check if all keywords are present (case-insensitive) in the title or broadcaster name
                 const matchesKeywords = keywords.every((keyword) =>
-                    clip.title.toLowerCase().includes(keyword.toLowerCase()) ||
+                    clip.title.toLowerCase().includes(keyword.toLowerCase()) || 
                     clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())
                 );
 
                 if (matchesKeywords) {
                     const clipDiv = document.createElement('div');
                     clipDiv.className = 'clip';
-                    clipDiv.innerHTML = `
+                    clipDiv.innerHTML = 
                         <h3>${clip.title}</h3>
                         <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
                         <p><strong>Views:</strong> ${clip.view_count}</p>
                         <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
                         <a href="${clip.url}" target="_blank">Watch Clip</a>
-                    `;
+                    ;
                     resultsDiv.appendChild(clipDiv);
                 }
             });
 
-            return data.pagination?.cursor || null;
-        };
+            // Update cursor for next page
+            cursor = data.pagination?.cursor || null;
+            console.log(Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${newClips.filter(clip => keywords.every(keyword => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase()))).length} matching clips.);
+        } while (cursor);
 
-        // Start fetching concurrently
-        tasks.push(fetchPage(cursor));
-        while (tasks.length) {
-            cursor = await Promise.race(tasks); // Wait for any task to complete
-            tasks.push(fetchPage(cursor)); // Queue the next fetch
-        }
-
-        console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
+        console.log(Fetching complete. Total unique clips found: ${seenClipIds.size});
         loadingDiv.innerHTML = 'Search complete. All results are displayed.'; // Stop loading message
     } catch (error) {
-        resultsDiv.innerHTML = `Error: ${error.message}`;
+        resultsDiv.innerHTML = Error: ${error.message};
         loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
         console.error('Error fetching clips:', error);
     }
 }
-
 
 // Function to initiate the fetching process
 async function fetchClips(days, keyword) {
@@ -99,7 +98,7 @@ async function fetchClips(days, keyword) {
 
         console.log('Fetching complete.');
     } catch (error) {
-        resultsDiv.innerHTML = `Error: ${error.message}`;
+        resultsDiv.innerHTML = Error: ${error.message};
         loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
         console.error(error);
     }
