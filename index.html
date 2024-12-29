@@ -10,11 +10,8 @@
             padding: 10px;
             border: 1px solid #ccc;
         }
-        #loading {
-            font-size: 16px;
-            margin-top: 20px;
-            font-weight: bold;
-            color: #666;
+        img {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -23,22 +20,19 @@
     
     <label for="timeRange">Enter the number of days to search:</label>
     <input type="number" id="timeRange" placeholder="e.g., 7">
-    <br>
-
+    
     <label for="keyword">Enter keyword to search for:</label>
     <input type="text" id="keyword" placeholder="e.g., pentakill">
-    <br>
-
-    <label for="gameSelect">Choose a game:</label>
-    <select id="gameSelect">
-        <!-- Game options will be populated here -->
-    </select>
-    <br>
     
+    <label for="gameSelect">Select a game:</label>
+    <select id="gameSelect">
+        <option value="">--Select Game--</option>
+    </select>
+
     <button id="search">Search Clips</button>
 
+    <div id="status">Searching for clips...</div>
     <div id="results"></div>
-    <div id="loading"></div> <!-- Loading indicator -->
 
     <script src="script.js"></script>
 </body>
