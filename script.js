@@ -12,16 +12,15 @@ async function fetchAllClips(startDate, endDate, keywords) {
     let seenClipIds = new Set(); // Track seen clip IDs to avoid duplicates
     let cursor = null; // Pagination cursor
     let pageCount = 0; // Track the number of pages fetched
+    let tasks = []; // Store promises for concurrent requests
 
     try {
-        do {
+        // Create a function that fetches clips and processes them
+        const fetchPage = async (cursor) => {
             pageCount++;
-
-            // Build the API URL with pagination
-            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20`;
+            let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=100`;
             if (cursor) url += `&after=${cursor}`;
 
-            // Fetch the clips
             const response = await fetch(url, {
                 headers: {
                     'Client-ID': CLIENT_ID,
@@ -34,16 +33,12 @@ async function fetchAllClips(startDate, endDate, keywords) {
             }
 
             const data = await response.json();
-
-            // Remove duplicates by checking IDs
             const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
             newClips.forEach((clip) => seenClipIds.add(clip.id));
 
-            // Filter and display clips incrementally as they are fetched
             newClips.forEach((clip) => {
-                // Check if all keywords are present (case-insensitive) in the title or broadcaster name
                 const matchesKeywords = keywords.every((keyword) =>
-                    clip.title.toLowerCase().includes(keyword.toLowerCase()) || 
+                    clip.title.toLowerCase().includes(keyword.toLowerCase()) ||
                     clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase())
                 );
 
@@ -61,10 +56,15 @@ async function fetchAllClips(startDate, endDate, keywords) {
                 }
             });
 
-            // Update cursor for next page
-            cursor = data.pagination?.cursor || null;
-            console.log(`Page ${pageCount}: Fetched ${newClips.length} clips, displaying ${newClips.filter(clip => keywords.every(keyword => clip.title.toLowerCase().includes(keyword.toLowerCase()) || clip.broadcaster_name.toLowerCase().includes(keyword.toLowerCase()))).length} matching clips.`);
-        } while (cursor);
+            return data.pagination?.cursor || null;
+        };
+
+        // Start fetching concurrently
+        tasks.push(fetchPage(cursor));
+        while (tasks.length) {
+            cursor = await Promise.race(tasks); // Wait for any task to complete
+            tasks.push(fetchPage(cursor)); // Queue the next fetch
+        }
 
         console.log(`Fetching complete. Total unique clips found: ${seenClipIds.size}`);
         loadingDiv.innerHTML = 'Search complete. All results are displayed.'; // Stop loading message
@@ -74,6 +74,7 @@ async function fetchAllClips(startDate, endDate, keywords) {
         console.error('Error fetching clips:', error);
     }
 }
+
 
 // Function to initiate the fetching process
 async function fetchClips(days, keyword) {
