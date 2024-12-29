@@ -24,8 +24,14 @@ async function fetchGames() {
 
         const gameSelect = document.getElementById('gameSelect');
         
+        if (!gameSelect) {
+            console.error('Game select dropdown not found!');
+            return;
+        }
+        
         // Check if data contains games
         if (data.data && data.data.length > 0) {
+            console.log('Games available:', data.data.length); // Log how many games were fetched
             data.data.forEach((game) => {
                 const option = document.createElement('option');
                 option.value = game.id;
