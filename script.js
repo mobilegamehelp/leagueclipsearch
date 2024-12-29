@@ -4,7 +4,7 @@ const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 const GAME_ID = '21779'; // League of Legends game ID
 
 // Helper function to fetch clips
-async function fetchClips(days) {
+async function fetchClips(days, keyword) {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = 'Fetching clips...';
 
@@ -35,19 +35,27 @@ async function fetchClips(days) {
             throw new Error('No clips found for the specified time range.');
         }
 
-        // Display the clips
+        // Filter and display the clips
         resultsDiv.innerHTML = '';
-        data.data.forEach((clip) => {
-            const clipDiv = document.createElement('div');
-            clipDiv.className = 'clip';
-            clipDiv.innerHTML = `
-                <h3>${clip.title}</h3>
-                <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-                <p><strong>Views:</strong> ${clip.view_count}</p>
-                <a href="${clip.url}" target="_blank">Watch Clip</a>
-            `;
-            resultsDiv.appendChild(clipDiv);
-        });
+        const filteredClips = data.data.filter((clip) =>
+            clip.title.toLowerCase().includes(keyword.toLowerCase())
+        );
+
+        if (filteredClips.length === 0) {
+            resultsDiv.innerHTML = `No clips found with the keyword "${keyword}".`;
+        } else {
+            filteredClips.forEach((clip) => {
+                const clipDiv = document.createElement('div');
+                clipDiv.className = 'clip';
+                clipDiv.innerHTML = `
+                    <h3>${clip.title}</h3>
+                    <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                    <p><strong>Views:</strong> ${clip.view_count}</p>
+                    <a href="${clip.url}" target="_blank">Watch Clip</a>
+                `;
+                resultsDiv.appendChild(clipDiv);
+            });
+        }
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
         console.error(error);
@@ -58,11 +66,17 @@ async function fetchClips(days) {
 document.getElementById('search').addEventListener('click', () => {
     const daysInput = document.getElementById('timeRange').value;
     const days = parseInt(daysInput, 10);
+    const keyword = document.getElementById('keyword').value.trim();
 
     if (isNaN(days) || days <= 0) {
         alert('Please enter a valid number of days.');
         return;
     }
 
-    fetchClips(days);
+    if (!keyword) {
+        alert('Please enter a keyword to search for.');
+        return;
+    }
+
+    fetchClips(days, keyword);
 });
