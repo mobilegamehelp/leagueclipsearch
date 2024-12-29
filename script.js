@@ -2,23 +2,26 @@
 const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
 const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 const GAME_ID = '21779'; // League of Legends game ID
+const MAX_CLIPS = 1000; // Limit the total clips fetched
 
 // Helper function to fetch all clips (with pagination)
 async function fetchAllClips(startDate, endDate) {
     let allClips = [];
+    const seenClipIds = new Set();
     let cursor = null; // Pagination cursor
     let pageCount = 0; // Track the number of pages fetched
 
     try {
         do {
-            // Increment page count
             pageCount++;
+            if (allClips.length >= MAX_CLIPS) {
+                console.log(`Reached maximum clip limit: ${MAX_CLIPS}`);
+                break;
+            }
 
             // Build the API URL with pagination
             let url = `https://api.twitch.tv/helix/clips?game_id=${GAME_ID}&started_at=${startDate}&ended_at=${endDate}&first=20`;
-            if (cursor) {
-                url += `&after=${cursor}`;
-            }
+            if (cursor) url += `&after=${cursor}`;
 
             // Fetch the clips
             const response = await fetch(url, {
@@ -34,18 +37,32 @@ async function fetchAllClips(startDate, endDate) {
 
             const data = await response.json();
 
-            // Add the fetched clips to the allClips array
-            allClips = allClips.concat(data.data);
+            // Remove duplicates
+            const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
+            newClips.forEach((clip) => seenClipIds.add(clip.id));
 
-            // Log the number of clips fetched on the current page
-            console.log(`Page ${pageCount}: Fetched ${data.data.length} clips.`);
+            // Add unique clips
+            allClips = allClips.concat(newClips);
+
+            // Display the new clips incrementally
+            newClips.forEach((clip) => {
+                const clipDiv = document.createElement('div');
+                clipDiv.className = 'clip';
+                clipDiv.innerHTML = `
+                    <h3>${clip.title}</h3>
+                    <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
+                    <p><strong>Views:</strong> ${clip.view_count}</p>
+                    <a href="${clip.url}" target="_blank">Watch Clip</a>
+                `;
+                document.getElementById('results').appendChild(clipDiv);
+            });
 
             // Update cursor for next page
             cursor = data.pagination?.cursor || null;
+            console.log(`Page ${pageCount}: Fetched ${newClips.length} unique clips.`);
         } while (cursor);
 
-        // Log the total number of clips fetched
-        console.log(`Total Clips Fetched: ${allClips.length}`);
+        console.log(`Total Unique Clips Fetched: ${allClips.length}`);
         return allClips;
     } catch (error) {
         console.error('Error fetching clips:', error);
@@ -59,36 +76,13 @@ async function fetchClips(days, keyword) {
     resultsDiv.innerHTML = 'Fetching clips...';
 
     try {
-        // Calculate the start and end date
         const endDate = new Date().toISOString();
         const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
         // Fetch all clips
-        const allClips = await fetchAllClips(startDate, endDate);
+        await fetchAllClips(startDate, endDate);
 
-        // Filter clips by keyword
-        const filteredClips = allClips.filter((clip) =>
-            clip.title.toLowerCase().includes(keyword.toLowerCase())
-        );
-        console.log(`Filtered Clips Found: ${filteredClips.length}`);
-
-        if (filteredClips.length === 0) {
-            throw new Error(`No clips found matching the keyword "${keyword}".`);
-        }
-
-        // Display the filtered clips
-        resultsDiv.innerHTML = '';
-        filteredClips.forEach((clip) => {
-            const clipDiv = document.createElement('div');
-            clipDiv.className = 'clip';
-            clipDiv.innerHTML = `
-                <h3>${clip.title}</h3>
-                <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-                <p><strong>Views:</strong> ${clip.view_count}</p>
-                <a href="${clip.url}" target="_blank">Watch Clip</a>
-            `;
-            resultsDiv.appendChild(clipDiv);
-        });
+        console.log('Fetching complete.');
     } catch (error) {
         resultsDiv.innerHTML = `Error: ${error.message}`;
         console.error(error);
