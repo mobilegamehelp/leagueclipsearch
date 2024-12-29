@@ -14,12 +14,22 @@
 </head>
 <body>
     <h1>Search Twitch Clips</h1>
+
+    <!-- Input for days to search -->
     <label for="timeRange">Enter the number of days to search:</label>
     <input type="number" id="timeRange" placeholder="e.g., 7">
+
+    <!-- Input for keyword -->
+    <label for="keyword">Enter a keyword to filter clips:</label>
+    <input type="text" id="keyword" placeholder="e.g., pentakill">
+
+    <!-- Search button -->
     <button id="search">Search Clips</button>
 
+    <!-- Results container -->
     <div id="results"></div>
 
+    <!-- Link to the script file -->
     <script src="script.js"></script>
 </body>
 </html>
