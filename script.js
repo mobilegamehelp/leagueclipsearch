@@ -1,9 +1,3 @@
-// Twitch API Credentials
-const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
-const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
-const GAME_ID = '21779'; // League of Legends game ID
-
-// Helper function to fetch and display clips incrementally
 async function fetchAllClips(startDate, endDate, keywords, maxPages = 10, clipsPerPage = 50) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
@@ -38,6 +32,9 @@ async function fetchAllClips(startDate, endDate, keywords, maxPages = 10, clipsP
 
             const data = await response.json();
 
+            // Log the raw clip data for debugging
+            console.log('Fetched Clip Data:', data);
+
             // Remove duplicates by checking IDs
             const newClips = data.data.filter((clip) => !seenClipIds.has(clip.id));
             newClips.forEach((clip) => seenClipIds.add(clip.id));
@@ -70,72 +67,3 @@ async function fetchAllClips(startDate, endDate, keywords, maxPages = 10, clipsP
         console.error('Error fetching clips:', error);
     }
 }
-
-// Function to display clips
-function displayClips(clips) {
-    const resultsDiv = document.getElementById('results');
-    if (clips.length === 0) {
-        resultsDiv.innerHTML = 'No clips found matching your search criteria.';
-    } else {
-        clips.forEach((clip) => {
-            const clipDiv = document.createElement('div');
-            clipDiv.className = 'clip';
-            clipDiv.innerHTML = `
-                <h3>${clip.title}</h3>
-                <p><strong>Streamer:</strong> ${clip.broadcaster_name}</p>
-                <p><strong>Views:</strong> ${clip.view_count}</p>
-                <img src="${clip.thumbnail_url.replace('{width}', '120').replace('{height}', '90')}" alt="Thumbnail">
-                <a href="${clip.url}" target="_blank">Watch Clip</a>
-            `;
-            resultsDiv.appendChild(clipDiv); // Append the clip div to the results div
-        });
-    }
-}
-
-// Function to initiate the fetching process
-async function fetchClips(days, keyword) {
-    const resultsDiv = document.getElementById('results');
-    const loadingDiv = document.getElementById('loading');
-    resultsDiv.innerHTML = ''; // Clear previous results
-    loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
-
-    try {
-        const endDate = new Date().toISOString();
-        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-        // Split the keyword into an array of keywords
-        const keywords = keyword.trim().split(/\s+/); // Split by spaces and remove any extra whitespace
-
-        if (keywords.length === 0) {
-            alert('Please enter a valid keyword.');
-            return;
-        }
-
-        await fetchAllClips(startDate, endDate, keywords);
-
-        console.log('Fetching complete.');
-    } catch (error) {
-        resultsDiv.innerHTML = `Error: ${error.message}`;
-        loadingDiv.innerHTML = 'An error occurred while fetching clips.'; // Error message
-        console.error(error);
-    }
-}
-
-// Event listener for the search button
-document.getElementById('search').addEventListener('click', () => {
-    const daysInput = document.getElementById('timeRange').value;
-    const keywordInput = document.getElementById('keyword').value.trim();
-    const days = parseInt(daysInput, 10);
-
-    if (isNaN(days) || days <= 0) {
-        alert('Please enter a valid number of days.');
-        return;
-    }
-
-    if (!keywordInput) {
-        alert('Please enter a keyword to filter clips.');
-        return;
-    }
-
-    fetchClips(days, keywordInput);
-});
