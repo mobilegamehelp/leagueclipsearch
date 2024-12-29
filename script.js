@@ -6,6 +6,13 @@ const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 async function fetchClips(days, gameId, keyword) {
     const resultsDiv = document.getElementById('results');
     const statusDiv = document.getElementById('status');
+    
+    // Check if elements are available before modifying
+    if (!resultsDiv || !statusDiv) {
+        console.error('Missing results or status divs.');
+        return;
+    }
+
     resultsDiv.innerHTML = 'Fetching clips...';
     statusDiv.innerHTML = 'Searching for clips...';
 
