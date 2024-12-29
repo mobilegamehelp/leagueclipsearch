@@ -5,6 +5,8 @@ const ACCESS_TOKEN = '3vuurdpkcvjhc45wklp9a8f6hg7fhm';
 // Fetch all available games and populate the dropdown
 async function fetchGames() {
     try {
+        console.log("Fetching games..."); // Log when the fetchGames function is triggered
+        
         const response = await fetch('https://api.twitch.tv/helix/games/top?first=100', {
             headers: {
                 'Client-ID': CLIENT_ID,
@@ -21,16 +23,16 @@ async function fetchGames() {
         console.log('Fetched games:', data); // Log the fetched games data
 
         const gameSelect = document.getElementById('gameSelect');
-
+        
         // Check if data contains games
         if (data.data && data.data.length > 0) {
-            // Populate the dropdown with the fetched games
             data.data.forEach((game) => {
                 const option = document.createElement('option');
                 option.value = game.id;
                 option.textContent = game.name;
                 gameSelect.appendChild(option);
             });
+            console.log("Games added to dropdown");
         } else {
             console.log('No games found in response.');
             alert('No games found.');
@@ -157,4 +159,6 @@ document.getElementById('search').addEventListener('click', () => {
 });
 
 // Fetch all games when the page loads
-window.onload = fetchGames;
+window.onload = function() {
+    fetchGames();
+};
