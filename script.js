@@ -1,6 +1,6 @@
 // Twitch API Credentials
-const CLIENT_ID = '${{ secrets.CLIENT_ID }}';
-const ACCESS_TOKEN = '${{ secrets.ACCESS_TOKEN }}';
+const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
+const ACCESS_TOKEN = 'w5be0xdb02yj1t7elh0wvs055uh436';
 const GAME_ID = '21779'; // League of Legends game ID
 
 // Helper function to fetch and display clips incrementally
