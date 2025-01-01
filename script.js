@@ -23,7 +23,7 @@ async function fetchClipsForCursor(startDate, endDate, cursor = null) {
 }
 
 // Fetch all pages concurrently
-async function fetchAllClipsConcurrently(startDate, endDate, keywords, maxPages = 5) {
+async function fetchAllClipsConcurrently(startDate, endDate, keywords, maxPages = 10) {
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     loadingDiv.innerHTML = 'Fetching clips...'; // Show loading indicator
